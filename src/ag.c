@@ -69,8 +69,8 @@
 #include <time.h>
 #include <string.h>
 #include <assert.h>
-#include <SDL/SDL.h>
-#include <SDL/SDL_mixer.h>
+#include <SDL.h>
+#include <SDL_mixer.h>
 
 #include "dlb.h"
 #include "linked.h"
