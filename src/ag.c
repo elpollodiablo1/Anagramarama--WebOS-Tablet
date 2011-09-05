@@ -1679,7 +1679,7 @@ main(int argc, char *argv[])
 
 	atexit(SDL_Quit);
 
-	screen = SDL_SetVideoMode(800, 600, 16, SDL_HWSURFACE|SDL_DOUBLEBUF);
+	screen = SDL_SetVideoMode(800, 600, 16, 0);//(800, 600, 16, SDL_HWSURFACE|SDL_DOUBLEBUF)
 	if (screen == NULL)
 	{
 		Error("Unable to set 800x600 video: %s", SDL_GetError());
