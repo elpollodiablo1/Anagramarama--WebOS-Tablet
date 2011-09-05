@@ -95,9 +95,9 @@ Box hotbox[6] = {
   /* BoxSolve */   { 612, 0, 66, 30 },
   /* BoxNew */     { 686, 0, 46, 30 },
   /* BoxQuit */    { 742, 0, 58, 30 },
-  /* BoxShuffle */ { 618, 206, 66, 16 },
-  /* BoxEnter */   { 690, 254, 40, 35 },
-  /* BoxClear */   { 690, 304, 40, 40 }
+  /* BoxShuffle */ { 615, 206, 70, 20 },
+  /* BoxEnter */   { 690, 250, 50, 45 },
+  /* BoxClear */   { 690, 300, 50, 45 }
 };
 
 /* module level variables for game control */
@@ -1495,13 +1495,14 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
             } else if (event.type == SDL_MOUSEBUTTONDOWN) {
                 clickDetect(event.button.button, event.button.x,
                             event.button.y, screen, *head, letters);
+				moveSprites(&screen, letters, letterSpeed);//added by me
             } else if (event.type == SDL_KEYUP) {
                 handleKeyboardEvent(&event, *head, letters);
             } else if (event.type == SDL_QUIT) {
                 done = 1;
                 break;
 			}
-            moveSprites(&screen, letters, letterSpeed);
+            //moveSprites(&screen, letters, letterSpeed);
         }
     }
 }
