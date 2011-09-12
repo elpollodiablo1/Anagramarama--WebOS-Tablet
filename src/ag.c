@@ -1398,7 +1398,7 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
          SDL_Surface *screen, struct sprite **letters)
 {
     int done=0;
-    SDL_Event event, event2;
+    SDL_Event event;
     time_t timeNow;
     SDL_TimerID timer;
     int timer_delay = 20;
@@ -1721,7 +1721,7 @@ main(int argc, char *argv[])
 	loadConfig(strcat(txt, "config.ini"));
 
 	newGame(&head, dlbHead, screen, &letters);
-	//inactive=0;
+
 	gameLoop(&head, dlbHead, screen, &letters);
 
 	/* tidy up and exit */
