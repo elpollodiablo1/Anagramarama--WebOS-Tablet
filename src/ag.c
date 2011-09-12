@@ -127,6 +127,7 @@ int gamePaused = 0;
 int foundDuplicate = 0;
 int quitGame = 0;
 int winGame = 0;
+int inactive = 0;
 
 int letterSpeed = LETTER_FAST;
 
@@ -1397,7 +1398,7 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
          SDL_Surface *screen, struct sprite **letters)
 {
     int done=0;
-    SDL_Event event;
+    SDL_Event event, event2;
     time_t timeNow;
     SDL_TimerID timer;
     int timer_delay = 20;
@@ -1485,8 +1486,19 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
 		if (quitGame) {
 			done = 1;
 		}
-
+		if (inactive){
+			SDL_WaitEvent(&event);
+				if (event.type == SDL_ACTIVEEVENT && event.active.gain == 1) {
+				inactive = 0;
+				timer = SDL_AddTimer(timer_delay, TimerCallback, NULL);
+				}
+		}
+		else {
 		while (SDL_WaitEvent(&event)) {
+			if (event.type == SDL_ACTIVEEVENT && event.active.gain == 0) {
+				inactive = 1;
+				break;
+			}
 			if (event.type == SDL_USEREVENT) {
                 timer_delay = anySpritesMoving(letters) ? 10 : 100;
                 moveSprites(&screen, letters, letterSpeed);
@@ -1500,10 +1512,11 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
                 handleKeyboardEvent(&event, *head, letters);
             } else if (event.type == SDL_QUIT) {
                 done = 1;
-                break;
-			}
-            //moveSprites(&screen, letters, letterSpeed);
-        }
+                break;	
+			} 
+				
+		}
+		}
     }
 }
 
@@ -1654,9 +1667,9 @@ main(int argc, char *argv[])
 
 	/* buffer sounds */
 	int audio_rate = MIX_DEFAULT_FREQUENCY;
-	Uint16 audio_format = AUDIO_S16;
-	int audio_channels = 1;
-	int audio_buffers = 256;
+	Uint16 audio_format = MIX_DEFAULT_FORMAT;//AUDIO_S16
+	int audio_channels = 2;//1
+	int audio_buffers = 512;//256
 
 	/* seed the random generator */
 	srand((unsigned int)time(NULL));
@@ -1708,7 +1721,7 @@ main(int argc, char *argv[])
 	loadConfig(strcat(txt, "config.ini"));
 
 	newGame(&head, dlbHead, screen, &letters);
-
+	//inactive=0;
 	gameLoop(&head, dlbHead, screen, &letters);
 
 	/* tidy up and exit */
