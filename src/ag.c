@@ -77,7 +77,6 @@
 #include "sprite.h"
 #include "ag.h"
 
-//#define demo
 
 #ifdef _MSC_VER
 #define snprintf _snprintf
@@ -1415,7 +1414,7 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
     timer = SDL_AddTimer(timer_delay, TimerCallback, NULL);
 	/* main game loop */
 	while (!done) {
-		//Error("total Number of Games",totalGames);
+
 		if (winGame) {
 			stopTheClock = 1;
 			solvePuzzle = 1;
