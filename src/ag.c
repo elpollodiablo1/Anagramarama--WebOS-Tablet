@@ -77,9 +77,13 @@
 #include "sprite.h"
 #include "ag.h"
 
+//#define demo
+
 #ifdef _MSC_VER
 #define snprintf _snprintf
 #endif
+
+extern void PDL_PDL_LaunchBrowser(char url);
 
 /* functions from ag_code.c */
 void ag(struct node **head, struct dlb_node *dlbHead, 
@@ -1398,15 +1402,20 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
          SDL_Surface *screen, struct sprite **letters)
 {
     int done=0;
+	int totalGames=0;
     SDL_Event event;
     time_t timeNow;
     SDL_TimerID timer;
     int timer_delay = 20;
     
+	#ifdef demo
+	totalGames +=1;//demo tags
+	#endif
+
     timer = SDL_AddTimer(timer_delay, TimerCallback, NULL);
 	/* main game loop */
 	while (!done) {
-
+		//Error("total Number of Games",totalGames);
 		if (winGame) {
 			stopTheClock = 1;
 			solvePuzzle = 1;
@@ -1438,7 +1447,6 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
 			if (!stopTheClock){
 				stopTheClock = 1;
 			}
-
 			solvePuzzle = 0;
 		}
 
@@ -1457,7 +1465,9 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
 				totalScore = 0;
 			}
 			newGame(head, dlbHead, screen, letters);
-
+			#ifdef demo
+			totalGames +=1;//demo tags
+			#endif
 			startNewGame = 0;
 		}
 
@@ -1482,6 +1492,16 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
             }
 			clearGuess = 0;
 		}
+		#ifdef demo
+		Error("TotalGames:%i\n",totalGames);
+		if (totalGames > 8){
+		    destroyLetters(letters);
+			strcpy(txt, language);
+			ShowBMP(strcat(txt,"images/demo.bmp"),screen, 0,0);
+			done=1;
+		}
+
+		#endif
 
 		if (quitGame) {
 			done = 1;
@@ -1518,6 +1538,16 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
 		}
 		}
     }
+	#ifdef demo
+	while(totalGames > 8){
+		while(SDL_WaitEvent(&event)){
+				if (event.type == SDL_MOUSEBUTTONDOWN) {
+				PDL_LaunchBrowser("http://developer.palm.com/appredirect/?packageid=com.cribme.aghd");
+				}
+		}
+	}
+	#endif
+
 }
 
 static int

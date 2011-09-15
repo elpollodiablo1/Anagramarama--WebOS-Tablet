@@ -1,6 +1,6 @@
 {
 	"id": "com.cribme.aghd",
-	"version": "0.9.2",
+	"version": "0.9.3",
 	"vendor": "Trilli Technology",
 	"type": "pdk",
 	"main": "ag",
