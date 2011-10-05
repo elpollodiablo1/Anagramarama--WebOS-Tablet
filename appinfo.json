@@ -1,0 +1,10 @@
+{
+	"id": "com.cribme.aghd",
+	"version": "1.0.0",
+	"vendor": "Trilli Technology",
+	"type": "pdk",
+	"main": "ag",
+	"title": "Anagramarama HD",
+	"icon": "icon.png",
+	"requiredMemory": 10
+}

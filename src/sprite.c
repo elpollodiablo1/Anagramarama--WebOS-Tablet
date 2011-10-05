@@ -22,7 +22,7 @@ Contact Details: colm@coralquest.com
 
 #include <stdlib.h>
 #include <string.h>
-#include <SDL/SDL.h>
+#include <SDL.h>
 #include "sprite.h"
 
 /********************************************************************/

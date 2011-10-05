@@ -69,17 +69,20 @@
 #include <time.h>
 #include <string.h>
 #include <assert.h>
-#include <SDL/SDL.h>
-#include <SDL/SDL_mixer.h>
+#include <SDL.h>
+#include <SDL_mixer.h>
 
 #include "dlb.h"
 #include "linked.h"
 #include "sprite.h"
 #include "ag.h"
 
+
 #ifdef _MSC_VER
 #define snprintf _snprintf
 #endif
+
+extern void PDL_PDL_LaunchBrowser(char url);
 
 /* functions from ag_code.c */
 void ag(struct node **head, struct dlb_node *dlbHead, 
@@ -95,9 +98,9 @@ Box hotbox[6] = {
   /* BoxSolve */   { 612, 0, 66, 30 },
   /* BoxNew */     { 686, 0, 46, 30 },
   /* BoxQuit */    { 742, 0, 58, 30 },
-  /* BoxShuffle */ { 618, 206, 66, 16 },
-  /* BoxEnter */   { 690, 254, 40, 35 },
-  /* BoxClear */   { 690, 304, 40, 40 }
+  /* BoxShuffle */ { 615, 206, 70, 24 },
+  /* BoxEnter */   { 690, 250, 50, 45 },
+  /* BoxClear */   { 690, 300, 50, 45 }
 };
 
 /* module level variables for game control */
@@ -127,6 +130,7 @@ int gamePaused = 0;
 int foundDuplicate = 0;
 int quitGame = 0;
 int winGame = 0;
+int inactive = 0;
 
 int letterSpeed = LETTER_FAST;
 
@@ -1397,11 +1401,16 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
          SDL_Surface *screen, struct sprite **letters)
 {
     int done=0;
+	int totalGames=0;
     SDL_Event event;
     time_t timeNow;
     SDL_TimerID timer;
     int timer_delay = 20;
     
+	#ifdef demo
+	totalGames +=1;//demo tags
+	#endif
+
     timer = SDL_AddTimer(timer_delay, TimerCallback, NULL);
 	/* main game loop */
 	while (!done) {
@@ -1437,7 +1446,6 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
 			if (!stopTheClock){
 				stopTheClock = 1;
 			}
-
 			solvePuzzle = 0;
 		}
 
@@ -1456,7 +1464,9 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
 				totalScore = 0;
 			}
 			newGame(head, dlbHead, screen, letters);
-
+			#ifdef demo
+			totalGames +=1;//demo tags
+			#endif
 			startNewGame = 0;
 		}
 
@@ -1481,12 +1491,33 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
             }
 			clearGuess = 0;
 		}
+		#ifdef demo
+		Error("TotalGames:%i\n",totalGames);
+		if (totalGames > 8){
+		    destroyLetters(letters);
+			strcpy(txt, language);
+			ShowBMP(strcat(txt,"images/demo.bmp"),screen, 0,0);
+			done=1;
+		}
+
+		#endif
 
 		if (quitGame) {
 			done = 1;
 		}
-
+		if (inactive){
+			SDL_WaitEvent(&event);
+				if (event.type == SDL_ACTIVEEVENT && event.active.gain == 1) {
+				inactive = 0;
+				timer = SDL_AddTimer(timer_delay, TimerCallback, NULL);
+				}
+		}
+		else {
 		while (SDL_WaitEvent(&event)) {
+			if (event.type == SDL_ACTIVEEVENT && event.active.gain == 0) {
+				inactive = 1;
+				break;
+			}
 			if (event.type == SDL_USEREVENT) {
                 timer_delay = anySpritesMoving(letters) ? 10 : 100;
                 moveSprites(&screen, letters, letterSpeed);
@@ -1495,15 +1526,27 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
             } else if (event.type == SDL_MOUSEBUTTONDOWN) {
                 clickDetect(event.button.button, event.button.x,
                             event.button.y, screen, *head, letters);
+				moveSprites(&screen, letters, letterSpeed);//added by me
             } else if (event.type == SDL_KEYUP) {
                 handleKeyboardEvent(&event, *head, letters);
             } else if (event.type == SDL_QUIT) {
                 done = 1;
-                break;
-			}
-            moveSprites(&screen, letters, letterSpeed);
-        }
+                break;	
+			} 
+				
+		}
+		}
     }
+	#ifdef demo
+	while(totalGames > 8){
+		while(SDL_WaitEvent(&event)){
+				if (event.type == SDL_MOUSEBUTTONDOWN) {
+				PDL_LaunchBrowser("http://developer.palm.com/appredirect/?packageid=com.cribme.aghd");
+				}
+		}
+	}
+	#endif
+
 }
 
 static int
@@ -1653,9 +1696,9 @@ main(int argc, char *argv[])
 
 	/* buffer sounds */
 	int audio_rate = MIX_DEFAULT_FREQUENCY;
-	Uint16 audio_format = AUDIO_S16;
-	int audio_channels = 1;
-	int audio_buffers = 256;
+	Uint16 audio_format = MIX_DEFAULT_FORMAT;//AUDIO_S16
+	int audio_channels = 2;//1
+	int audio_buffers = 512;//256
 
 	/* seed the random generator */
 	srand((unsigned int)time(NULL));
@@ -1679,7 +1722,7 @@ main(int argc, char *argv[])
 
 	atexit(SDL_Quit);
 
-	screen = SDL_SetVideoMode(800, 600, 16, SDL_HWSURFACE|SDL_DOUBLEBUF);
+	screen = SDL_SetVideoMode(800, 600, 16, 0);//(800, 600, 16, SDL_HWSURFACE|SDL_DOUBLEBUF)
 	if (screen == NULL)
 	{
 		Error("Unable to set 800x600 video: %s", SDL_GetError());
