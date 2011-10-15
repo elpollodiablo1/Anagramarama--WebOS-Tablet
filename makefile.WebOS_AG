@@ -8,8 +8,8 @@ CXX=$(TOOLPREFIX)g++
 LD==$(TOOLPREFIX)ld
 
 
-C_FILES=src\dlb.c src\linked.c src\sprite.c src\ag_core.c src\ag.c
-OBJ_FILES=src\dlb.o src\linked.o src\sprite.o src\ag_core.o src\ag.o
+C_FILES=src\dlb.c src\linked.c src\sprite.c src\cfg.c src\ag_core.c src\ag.c
+OBJ_FILES=src\dlb.o src\linked.o src\sprite.o src\cfg.o src\ag_core.o src\ag.o
 OUT_FILE=ag
 DEVICEOPTS=-mcpu=cortex-a8 -mfpu=neon -mfloat-abi=softfp
 all:ag

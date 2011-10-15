@@ -75,6 +75,7 @@
 #include "dlb.h"
 #include "linked.h"
 #include "sprite.h"
+#include "cfg.h"
 #include "ag.h"
 
 
@@ -82,7 +83,8 @@
 #define snprintf _snprintf
 #endif
 
-extern void PDL_PDL_LaunchBrowser(char url);
+extern void PDL_LaunchBrowser(char url);
+extern void PDL_ServiceCall(char *uri, char *payload);
 
 /* functions from ag_code.c */
 void ag(struct node **head, struct dlb_node *dlbHead, 
@@ -133,6 +135,11 @@ int winGame = 0;
 int inactive = 0;
 
 int letterSpeed = LETTER_FAST;
+
+#ifdef demo
+/* democonfig */
+cfg conf;
+#endif
 
 /* Graphics cache */
 SDL_Surface* letterBank = NULL;
@@ -1401,14 +1408,19 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
          SDL_Surface *screen, struct sprite **letters)
 {
     int done=0;
-	int totalGames=0;
+	//int totalgames=0;
     SDL_Event event;
     time_t timeNow;
     SDL_TimerID timer;
     int timer_delay = 20;
     
 	#ifdef demo
-	totalGames +=1;//demo tags
+	conf.totalgames +=1;//demo tags
+	char buffer[512];
+			sprintf(buffer,"globaldata/agdemo.cfg");
+			Error("Buffer :%s\n",buffer);
+			Error("TotalGames Written to file :%i\n",conf.totalgames);
+			saveCFG(buffer,&conf);
 	#endif
 
     timer = SDL_AddTimer(timer_delay, TimerCallback, NULL);
@@ -1464,9 +1476,16 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
 				totalScore = 0;
 			}
 			newGame(head, dlbHead, screen, letters);
+
 			#ifdef demo
-			totalGames +=1;//demo tags
+			conf.totalgames +=1;//demo tags
+			char buffer[512];
+			sprintf(buffer,"globaldata/agdemo.cfg");
+			Error("Buffer :%s\n",buffer);
+			Error("TotalGames Written to file :%i\n",conf.totalgames);
+			saveCFG(buffer,&conf);
 			#endif
+
 			startNewGame = 0;
 		}
 
@@ -1492,8 +1511,8 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
 			clearGuess = 0;
 		}
 		#ifdef demo
-		Error("TotalGames:%i\n",totalGames);
-		if (totalGames > 8){
+		Error("TotalGames:%i\n",conf.totalgames);//conf.totalgames
+		if (conf.totalgames > 8){//conf.totalgames
 		    destroyLetters(letters);
 			strcpy(txt, language);
 			ShowBMP(strcat(txt,"images/demo.bmp"),screen, 0,0);
@@ -1538,10 +1557,11 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
 		}
     }
 	#ifdef demo
-	while(totalGames > 8){
+	while(conf.totalgames > 8){//conf.totalgames
 		while(SDL_WaitEvent(&event)){
 				if (event.type == SDL_MOUSEBUTTONDOWN) {
-				PDL_LaunchBrowser("http://developer.palm.com/appredirect/?packageid=com.cribme.aghd");
+				PDL_ServiceCall("palm://com.palm.applicationManager/open", "{\"target\":\"http://developer.palm.com/appredirect/?packageid=com.cribme.aghd\"}");
+					//PDL_LaunchBrowser("http://developer.palm.com/appredirect/?packageid=com.cribme.aghd");
 				}
 		}
 	}
@@ -1689,6 +1709,7 @@ outputs: retval  0 = success   1 = failure
 int
 main(int argc, char *argv[])
 {
+	char buffer[512];
     struct node* head = NULL;
     struct dlb_node* dlbHead = NULL;
     SDL_Surface *screen;
@@ -1714,6 +1735,15 @@ main(int argc, char *argv[])
         Error("failed to open word list file");
         exit(1);
     }
+#ifdef demo
+	sprintf(buffer,"globaldata/agdemo.cfg");
+	if(!loadCFG(buffer,&conf))
+	{
+		//fprintf(stderr,"config file location %s\n",buffer);
+		fprintf(stderr,"unable to read configuration, using defaults\n");
+		//exit(1);
+	}
+#endif
 
 	if (SDL_Init(SDL_INIT_AUDIO|SDL_INIT_VIDEO|SDL_INIT_TIMER) < 0){
 		Error("Unable to init SDL: %s", SDL_GetError());
@@ -1754,6 +1784,7 @@ main(int argc, char *argv[])
 	gameLoop(&head, dlbHead, screen, &letters);
 
 	/* tidy up and exit */
+
 	Mix_CloseAudio();
 	clearSoundBuffer(&soundCache);
 	dlb_free(dlbHead);
