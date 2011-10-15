@@ -1415,12 +1415,13 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
     int timer_delay = 20;
     
 	#ifdef demo
-	conf.totalgames +=1;//demo tags
 	char buffer[512];
-			sprintf(buffer,"globaldata/agdemo.cfg");
-			Error("Buffer :%s\n",buffer);
-			Error("TotalGames Written to file :%i\n",conf.totalgames);
-			saveCFG(buffer,&conf);
+	if (conf.totalgames < 0){
+		conf.totalgames=8;
+	}
+	conf.totalgames +=1;//demo tags
+	sprintf(buffer,"globaldata/agdemo.cfg");
+	saveCFG(buffer,&conf);
 	#endif
 
     timer = SDL_AddTimer(timer_delay, TimerCallback, NULL);
@@ -1481,8 +1482,8 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
 			conf.totalgames +=1;//demo tags
 			char buffer[512];
 			sprintf(buffer,"globaldata/agdemo.cfg");
-			Error("Buffer :%s\n",buffer);
-			Error("TotalGames Written to file :%i\n",conf.totalgames);
+			//Error("Buffer :%s\n",buffer);
+			//Error("TotalGames Written to file :%i\n",conf.totalgames);
 			saveCFG(buffer,&conf);
 			#endif
 
