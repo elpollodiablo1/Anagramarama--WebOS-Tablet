@@ -269,6 +269,7 @@ bufferSounds(struct sound **soundCache)
 	pushSound(soundCache, "badword", "audio/badword.wav");
 	pushSound(soundCache, "shuffle", "audio/shuffle.wav");
 	pushSound(soundCache, "clock-tick", "audio/clock-tick.wav");
+	pushSound(soundCache, "foundall", "audio/foundall.wav");
 }
 
 /***********************************************************
@@ -452,6 +453,7 @@ synopsis: walk the linked list of answers checking
 	  for our guess.  If the guess exists, mark it as
 	  found and guessed.
 	  if it's the longest word play the foundbig 
+	  if it has found all of the words play foundall
 	  sound otherwise play the got word sound.
 	  If the word has already been found, play the
 	  duplicate sound.
@@ -497,6 +499,7 @@ checkGuess(char* answer, struct node* head)
 					Mix_PlayChannel(-1, getSound("found"),0);
 				}
 				if (answersSought == answersGot) {
+					Mix_PlayChannel(-1, getSound("foundall"),0);
 					/* getting all answers gives us the game score again!!*/
 					totalScore += score;
 					winGame = 1;
