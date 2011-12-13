@@ -85,6 +85,7 @@
 
 extern void PDL_LaunchBrowser(char url);
 extern void PDL_ServiceCall(char *uri, char *payload);
+extern long PDL_GetLanguage(char *buffer, int bufferLen);
 
 /* functions from ag_code.c */
 void ag(struct node **head, struct dlb_node *dlbHead, 
@@ -117,6 +118,7 @@ int solvePuzzle = 0;
 int shuffleRemaining = 0;
 int clearGuess = 0;
 
+
 time_t gameStart = 0;
 time_t gameTime = 0;
 int stopTheClock = 0;
@@ -133,6 +135,7 @@ int foundDuplicate = 0;
 int quitGame = 0;
 int winGame = 0;
 int inactive = 0;
+int checkScore = 0;
 
 int letterSpeed = LETTER_FAST;
 
@@ -140,6 +143,7 @@ int letterSpeed = LETTER_FAST;
 /* democonfig */
 cfg conf;
 #endif
+highscore hiscore[10];
 
 /* Graphics cache */
 SDL_Surface* letterBank = NULL;
@@ -1410,15 +1414,17 @@ static void
 gameLoop(struct node **head, struct dlb_node *dlbHead, 
          SDL_Surface *screen, struct sprite **letters)
 {
+	int j,k;
     int done=0;
-	//int totalgames=0;
+	int numofwords=1;
     SDL_Event event;
     time_t timeNow;
     SDL_TimerID timer;
     int timer_delay = 20;
-    
+    char buffer[512];
+
 	#ifdef demo
-	char buffer[512];
+	
 	if (conf.totalgames < 0){
 		conf.totalgames=8;
 	}
@@ -1474,10 +1480,46 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
 			updateAnswers = 0;
 		}
 
+
+		if ((stopTheClock && !gotBigWord && !checkScore)||(startNewGame&&!gotBigWord& !checkScore)){
+			//Error("inside highscore\n");
+			for(j=9;j>=0 && hiscore[j].score<totalScore;j--);
+				//Error("score position: %i\n",j);
+			/* the player will be in the hall of fame? */
+			if(j<9) {
+				for(k=8;k>j;k--)
+					hiscore[k+1]=hiscore[k];
+
+				/* put the new score */
+				hiscore[j+1].score=totalScore;
+				hiscore[j+1].stage=numofwords;
+				
+				 //hiscore[j+1].name[0]=0;
+				//if(!getName(hiscore[j+1].name, j+2,i+1))
+				//	break; /* probably a problem if the user closes the window */
+
+				/* show the hall of fame */
+				//hiscores();
+
+				/* save hi-scores */
+				#ifdef demo
+				sprintf(buffer,"/media/internal/appdata/com.cribme.aghddemo/ag-hiscore");
+				#else
+				sprintf(buffer,"/media/internal/appdata/com.cribme.aghd/ag-hiscore");
+				#endif
+				//sprintf(buffer,"globaldata/ag-hiscore");
+				if(!saveScore(buffer,hiscore))
+				fprintf(stderr,"unable to save hi-scores\ndo you have permissions to write into %s?\n" ,buffer);
+				
+			}
+			checkScore=1;
+		}
+
 		if (startNewGame) {
 			/* move letters back down again */
 			if (!gotBigWord){
 				totalScore = 0;
+				numofwords=0;
 			}
 			newGame(head, dlbHead, screen, letters);
 
@@ -1490,6 +1532,8 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
 			saveCFG(buffer,&conf);
 			#endif
 
+			numofwords+=1;
+			checkScore = 0;
 			startNewGame = 0;
 		}
 
@@ -1515,11 +1559,11 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
 			clearGuess = 0;
 		}
 		#ifdef demo
-		Error("TotalGames:%i\n",conf.totalgames);//conf.totalgames
+		//Error("TotalGames:%i\n",conf.totalgames);//conf.totalgames
 		if (conf.totalgames > 8){//conf.totalgames
 		    destroyLetters(letters);
 			strcpy(txt, language);
-			ShowBMP(strcat(txt,"images/demo.bmp"),screen, 0,0);
+			ShowBMP(strcat(txt,"images/demo.bmp"),screen, 100,75);
 			done=1;
 		}
 
@@ -1571,6 +1615,7 @@ gameLoop(struct node **head, struct dlb_node *dlbHead,
 	}
 	#endif
 
+	
 }
 
 static int
@@ -1650,6 +1695,8 @@ static void
 init_locale(int argc, char *argv[])
 {
     char *lang = NULL, *p = NULL;
+	char buffer[64];
+
 
 	strcpy(language,"i18n/");
 	if (argc == 2) {
@@ -1657,11 +1704,15 @@ init_locale(int argc, char *argv[])
         if (is_valid_locale(language))
             return;
 	}
-
-    lang = getenv("LANG");
-    if (lang != NULL) {
+	PDL_GetLanguage(buffer, 64);
+	//Error("the pdl language is:%s\n",buffer);
+    //lang = getenv("LANG");
+    lang = buffer;
+	lang = strtok(buffer,"_");
+	if (lang != NULL) {
         strcpy(language,"i18n/");
         strcat(language, lang);
+		//Error("lang defined language is:%s\n",language);
         if (is_valid_locale(language))
             return;
         while ((p = strrchr(language, '.')) != NULL) {
@@ -1696,7 +1747,9 @@ init_locale(int argc, char *argv[])
 #endif /* WIN32 */
 
     /* last resort - use the english locale */
+	//Error("default locale path:%s\n",DEFAULT_LOCALE_PATH);
     strcpy(language, DEFAULT_LOCALE_PATH);
+	//Error("default language is:%s\n",language);
 }
 
 /***********************************************************
@@ -1739,7 +1792,9 @@ main(int argc, char *argv[])
         Error("failed to open word list file");
         exit(1);
     }
+	
 #ifdef demo
+	/*read in demo info*/
 	sprintf(buffer,"globaldata/agdemo.cfg");
 	if(!loadCFG(buffer,&conf))
 	{
@@ -1749,6 +1804,15 @@ main(int argc, char *argv[])
 	}
 #endif
 
+/* read hi-scores */
+#ifdef demo
+	sprintf(buffer,"/media/internal/appdata/com.cribme.aghddemo/ag-hiscore");
+#else
+	sprintf(buffer,"/media/internal/appdata/com.cribme.aghd/ag-hiscore");
+#endif
+	if(!loadScore(buffer,hiscore)){
+		fprintf(stderr,"unable to read hi-scores, using defaults\n");
+	}
 	if (SDL_Init(SDL_INIT_AUDIO|SDL_INIT_VIDEO|SDL_INIT_TIMER) < 0){
 		Error("Unable to init SDL: %s", SDL_GetError());
 		exit(1);
